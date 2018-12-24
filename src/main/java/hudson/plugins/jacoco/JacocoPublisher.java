@@ -10,6 +10,9 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import hudson.plugins.jacoco.diff.DiffAST;
+import hudson.plugins.jacoco.diff.MethodInfo;
+import hudson.plugins.jacoco.git.GitClone;
 import hudson.plugins.jacoco.portlet.utils.Utils;
 import hudson.plugins.jacoco.report.CoverageReport;
 import hudson.remoting.VirtualChannel;
@@ -31,6 +34,7 @@ import jenkins.MasterToSlaveFileCallable;
 import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.tools.ant.DirectoryScanner;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -66,12 +70,20 @@ public class JacocoPublisher extends Recorder implements SimpleBuildStep {
     // Delta coverage thresholds to apply
     public JacocoHealthReportDeltaThresholds deltaHealthReport;
 
-    
+    /**
+     * 用于存储对比结果
+     */
+    public static List<MethodInfo> methodInfos;
+
     /**
      * Variables containing the configuration set by the user.
      */
     private String execPattern;
     private String classPattern;
+    // ssh格式的git地址
+    private String sshRepoPattern;
+    // 基准tag
+    private String basicTagPattern;
     private String sourcePattern;
     private String sourceInclusionPattern;
     private String sourceExclusionPattern;
@@ -113,6 +125,8 @@ public class JacocoPublisher extends Recorder implements SimpleBuildStep {
     public JacocoPublisher() {
         this.execPattern = "**/**.exec";
         this.classPattern = "**/classes";
+        this.sshRepoPattern = "";
+        this.basicTagPattern = "";
         this.sourcePattern = "**/src/main/java";
         this.sourceInclusionPattern = "**/*.java";
         this.sourceExclusionPattern = "";
@@ -220,6 +234,8 @@ public class JacocoPublisher extends Recorder implements SimpleBuildStep {
 	public String toString() {
 		return "JacocoPublisher [execPattern=" + execPattern
 				+ ", classPattern=" + classPattern
+                + ", sshRepoPattern=" + sshRepoPattern
+                + ", basicTagPattern=" + basicTagPattern
 				+ ", sourcePattern=" + sourcePattern
 				+ ", sourceExclusionPattern=" + sourceExclusionPattern
 				+ ", sourceInclusionPattern=" + sourceInclusionPattern
@@ -255,6 +271,14 @@ public class JacocoPublisher extends Recorder implements SimpleBuildStep {
 	public String getClassPattern() {
 		return classPattern;
 	}
+
+    public String getSshRepoPattern() {
+        return sshRepoPattern;
+    }
+
+    public String getBasicTagPattern() {
+        return basicTagPattern;
+    }
 
 	public String getSourcePattern() {
 		return sourcePattern;
@@ -395,6 +419,16 @@ public class JacocoPublisher extends Recorder implements SimpleBuildStep {
     @DataBoundSetter
     public void setClassPattern(String classPattern) {
         this.classPattern = classPattern;
+    }
+
+    @DataBoundSetter
+    public void setSshRepoPattern(String sshRepoPattern) {
+        this.sshRepoPattern = sshRepoPattern;
+    }
+
+    @DataBoundSetter
+    public void setBasicTagPattern(String basicTagPattern) {
+        this.basicTagPattern = basicTagPattern;
     }
 
     @DataBoundSetter
@@ -652,6 +686,28 @@ public class JacocoPublisher extends Recorder implements SimpleBuildStep {
             String expandedExclusion = env.expand(exclusionPattern);
             excludes = expandedExclusion.split(DIR_SEP);
             logger.println("[JaCoCo plugin] exclusions: " + Arrays.toString(excludes));
+        }
+
+        methodInfos = new ArrayList<MethodInfo>();
+
+        String baseTag = "";
+
+        if (!basicTagPattern.equals("") && !sshRepoPattern.equals("")) {
+            baseTag = basicTagPattern;
+            String tagPath = filePath + DiffAST.SEPARATOR + baseTag;
+            logger.println("开始clone历史版本：" + baseTag);
+            try {
+                GitClone.cloneFiles(sshRepoPattern, baseTag, tagPath);
+            } catch (GitAPIException e) {
+                e.printStackTrace();
+            }
+            logger.println("clone历史版本：" + baseTag + "结束");
+            if (methodInfos.isEmpty()) {
+                DiffAST.diffBaseDir(filePath.toString(), tagPath);
+                logger.println("变更方法数为：" + methodInfos.size());
+            }
+        } else {
+            baseTag = "kdbczdtag";
         }
 
         final JacocoBuildAction action = JacocoBuildAction.load(healthReports, taskListener, reportDir, includes, excludes);

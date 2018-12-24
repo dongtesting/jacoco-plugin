@@ -33,11 +33,19 @@
         <col width="39%"/>
         <tr>
             <td>Path to class directories (e.g.: **/target/classDir, **/classes)</td>
+            <td>SshRepo (e.g.: git@127.0.0.1:angrytest/test.git)</td>
+            <td>Basic Tag (e.g.: dev_20180917)</td>
         </tr>
         <tr>
          <td>
             <f:textbox field="classPattern"  default="**/classes"/>
          </td>
+          <td>
+             <f:textbox field="sshRepoPattern"  default=""/>
+           </td>
+          <td>
+            <f:textbox field="basicTagPattern"  default=""/>
+          </td>
         </tr>
       </table>
       <br/>
