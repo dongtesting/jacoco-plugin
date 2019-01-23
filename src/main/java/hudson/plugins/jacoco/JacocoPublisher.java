@@ -694,7 +694,7 @@ public class JacocoPublisher extends Recorder implements SimpleBuildStep {
 
         if (!basicTagPattern.equals("") && !sshRepoPattern.equals("")) {
             baseTag = basicTagPattern;
-            String tagPath = filePath + DiffAST.SEPARATOR + baseTag;
+            String tagPath = filePath.getParent() + DiffAST.SEPARATOR + baseTag;
             logger.println("开始clone历史版本：" + baseTag);
             try {
                 GitClone.cloneFiles(sshRepoPattern, baseTag, tagPath);
