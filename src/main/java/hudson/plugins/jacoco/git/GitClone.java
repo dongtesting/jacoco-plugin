@@ -51,15 +51,9 @@ public class GitClone {
         if (!tagPathFile.exists()) {// 如果已存在文件夹,则表示已clone过,不需要重新clone
             // 设置cloneCommand使用SSH的公钥认证
             final CloneCommand cloneCommand = Git.cloneRepository();
-            cloneCommand
-                    .setTransportConfigCallback(new TransportConfigCallback() {
-                        public void configure(final Transport transport) {
-                            final SshTransport sshTransport = (SshTransport) transport;
-                            sshTransport
-                                    .setSshSessionFactory(sshSessionFactory);
-                        }
-                    });
-
+            //不想用SSH的认证方式
+            UsernamePasswordCredentialsProvider user = new UsernamePasswordCredentialsProvider("username", "password");
+            cloneCommand.setCredentialsProvider(user);
             // 克隆仓库
             cloneCommand.setBranch(tag).setURI(gitPath)
                     .setDirectory(tagPathFile).call();
