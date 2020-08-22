@@ -3,6 +3,12 @@ jacoco-plugin
 
 新增两个配置：`SshRepo`和`Basic Tag`，当两个配置均不为空时会先下载基准版本代码，再获取增量代码，最后生成增量代码覆盖率，否则仍执行原逻辑，生成全量代码覆盖率。
 
+得到手工或者自动化的覆盖率，要先启动java程序：
+java -javaagent:D:\Git\jacoco\jacocoagent.jar=includes=*,output=tcpserver,address=192.168.30.47,port=6300 -jar D:\Git\spring-boot-demo\target\spring-boot-demo-0.0.1-SNAPSHOT.jar
+
+增加Post Step：
+mvn org.jacoco:jacoco-maven-plugin:0.8.1:dump -Djacoco.address=192.168.30.47 -Djacoco.reset=false -Djacoco.port=6300 -Djacoco.append=true
+
 [![Build Status](https://jenkins.ci.cloudbees.com/buildStatus/icon?job=plugins/jacoco-plugin)](https://jenkins.ci.cloudbees.com/job/plugins/job/jacoco-plugin/)
 [![Build Status](https://travis-ci.org/jenkinsci/jacoco-plugin.svg?branch=master)](https://travis-ci.org/jenkinsci/jacoco-plugin)
 [![Release](https://img.shields.io/github/release/jenkinsci/jacoco-plugin.svg)](https://github.com/jenkinsci/jacoco-plugin/releases)
