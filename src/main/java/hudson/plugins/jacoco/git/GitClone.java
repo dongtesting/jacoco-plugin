@@ -57,7 +57,7 @@ public class GitClone {
                     .setDirectory(tagPathFile).call();
         }else {
             //如果目录存在，就拉最新代码
-            Git git = new Git(new FileRepository(gitPath));
+             Git git = new Git(new FileRepository(directory+"/.git"));
             git.pull().setRemoteBranchName(tag).
                     setCredentialsProvider(user).call();
         }
